@@ -17,7 +17,7 @@ def calculate_feature_importances():
         result["all"] = feature_importances
         result["top_3"] = feature_importances[:3]
         result["last_3"] = feature_importances[-3:]
-        file_location = os.path.join(dataset, "feature_imporstances.json")
+        file_location = os.path.join(dataset, "feature_importances.json")
         with open(file_location, "w") as file:
             json.dump(result, file, indent=2)
 
