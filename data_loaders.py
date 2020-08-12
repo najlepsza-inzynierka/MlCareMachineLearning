@@ -6,6 +6,11 @@ from typing import Tuple
 
 datasets_dir = "datasets"
 
+# functions in this module load datasets from the datasets dir; files should
+# be in .csv format and function names *must* follow the convention:
+# load_DATASET_NAME() (as well as appropriate directories must also be named
+# after datasets)
+
 
 def load_acute_inflammations() -> Tuple[DataFrame, DataFrame]:
     file_path = os.path.join(datasets_dir, "acute_inflammations.csv")
