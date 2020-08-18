@@ -1,14 +1,20 @@
+import math
 from operator import itemgetter
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
+import cv2
+import graphviz
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.tree import export_graphviz, DecisionTreeClassifier
 
 
 def get_feature_importances(X: Union[np.ndarray, pd.DataFrame],
                             y: Union[np.ndarray, pd.Series, pd.DataFrame]) \
-                            -> List[Tuple[str, float]]:
+        -> List[Tuple[str, float]]:
     """
     Calculates feature importances for a given dataset and returns them,
     sorted descending. If names of features are not available, dummy values
@@ -37,4 +43,77 @@ def get_feature_importances(X: Union[np.ndarray, pd.DataFrame],
     return result
 
 
+def train_decision_tree(X: Union[np.ndarray, pd.DataFrame],
+                        y: Union[np.ndarray, pd.Series, pd.DataFrame]) \
+        -> Tuple[DecisionTreeClassifier, Dict[str, float]]:
+    """
+    Train the decision tree classifier on the given dataset, automatically
+    choosing the optimal hyperparameters through grid search cross-validation.
 
+    :param X: matrix-like, samples matrix
+    :param y: vector-like, classes of samples
+    :return: trained classifier and dictionary with metric scores fro test set
+    """
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    clf = DecisionTreeClassifier(random_state=0)
+
+    # deeper trees would not be easily interpretable in graphical form
+    depths = range(1, 8)
+    min_samples = range(2, int(math.sqrt(X.shape[0])))
+    class_weights = [None, "balanced"]
+    ccp_alphas = clf.cost_complexity_pruning_path(X_train, y_train).ccp_alphas
+
+    param_grid = {"max_depth": depths,
+                  "min_samples_split": min_samples,
+                  "min_samples_leaf": min_samples,
+                  "class_weight": class_weights,
+                  "ccp_alpha": ccp_alphas}
+
+    tree = GridSearchCV(DecisionTreeClassifier(random_state=0),
+                        param_grid,
+                        n_jobs=-1,
+                        verbose=1)
+    tree.fit(X_train, y_train)
+
+    tree = tree.best_estimator_
+    y_pred = tree.predict(X_test)
+    scores = {"accuracy": round(accuracy_score(y_test, y_pred), 2),
+              "precision": round(precision_score(y_test, y_pred), 2),
+              "recall": round(recall_score(y_test, y_pred), 2),
+              "f1": round(f1_score(y_test, y_pred), 2),
+              "roc_auc": round(roc_auc_score(y_test, y_pred), 2)}
+
+    return tree, scores
+
+
+def get_decision_tree_plot(clf: DecisionTreeClassifier,
+                           feature_names: Union[List[str], np.ndarray, None],
+                           class_names: Union[List[str], None]) \
+        -> np.ndarray:
+    """
+    Plots the decision tree and returns the image as a Numpy array.
+
+    :param clf: decision tree classifier to be plotted
+    :param feature_names: list of names of features to be plotted or None
+    :param class_names: list of names of classes to be plotted or None
+    :return: Numpy array with the plot
+    """
+    tree: str = export_graphviz(decision_tree=clf,
+                                out_file=None,
+                                feature_names=feature_names,
+                                class_names=class_names,
+                                label="all",
+                                filled=True,
+                                impurity=False,
+                                proportion=True,
+                                rounded=True,
+                                precision=2)
+
+    # get tree plot in memory as bytes of image
+    image_bytes: bytes = graphviz.Source(tree).pipe(format="png")
+
+    # decode bytes as image; OpenCV uses BGR, convert to RGB for right display
+    image: np.ndarray = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    return image
