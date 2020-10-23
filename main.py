@@ -1,8 +1,10 @@
 import json
 import os
 
-from commons import get_feature_importances
-import data_loaders
+import joblib
+
+from ml import *
+from data_loaders import load_dataset
 
 datasets_names = ["acute_inflammations", "breast_cancer_coimbra",
                   "breast_cancer_wisconsin"]
@@ -10,8 +12,7 @@ datasets_names = ["acute_inflammations", "breast_cancer_coimbra",
 
 def calculate_feature_importances():
     for dataset in datasets_names:
-        loader_fun = getattr(data_loaders, "load_" + dataset)
-        X, y = loader_fun()
+        X, y, class_names = load_dataset(dataset)
         feature_importances = get_feature_importances(X, y)
         result = dict()
         result["all"] = feature_importances
@@ -34,5 +35,34 @@ def calculate_feature_importances():
             json.dump(result, file, indent=2)
 
 
+def make_decision_trees():
+    for dataset in datasets_names:
+        X, y, class_names = load_dataset(dataset)
+        feature_names: np.ndarray = X.columns.values
+        clf, scores = train_decision_tree(X, y)
+
+        with open(os.path.join(dataset, "tree_metrics.json"), "w") \
+                as metrics_file:
+            joblib.dump(clf, os.path.join(dataset, "tree_model.joblib"))
+            json.dump(scores, metrics_file, indent=2)
+
+        plot = get_decision_tree_plot(clf, feature_names, class_names)
+        file_location = os.path.join(dataset, "tree.png")
+        cv2.imwrite(file_location, plot)
+
+
+def make_XGBoost_classifiers():
+    for dataset in datasets_names:
+        X, y, _ = load_dataset(dataset)
+        clf, scores = train_XGBoost(X, y)
+
+        with open(os.path.join(dataset, "xgboost_metrics.json"), "w") \
+                as metrics_file:
+            joblib.dump(clf, os.path.join(dataset, "xgboost_model.joblib"))
+            json.dump(scores, metrics_file, indent=2)
+
+
 if __name__ == "__main__":
-    calculate_feature_importances()
+    #calculate_feature_importances()
+    #make_decision_trees()
+    make_XGBoost_classifiers()

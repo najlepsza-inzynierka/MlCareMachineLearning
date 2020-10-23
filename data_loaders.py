@@ -42,8 +42,8 @@ def _load_breast_cancer_wisconsin() -> Tuple[DataFrame, DataFrame, List[str]]:
 
 def load_dataset(name: str) -> Tuple[DataFrame, DataFrame, List[str]]:
     function_name: str = "_load_" + name
-    if function_name not in locals():
+    if function_name not in globals():
         raise ValueError(f"Function {function_name} not recognized")
-    return locals()[function_name]()
+    return globals()[function_name]()
 
 
