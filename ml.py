@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple, Union
 
 import cv2
 import graphviz
+from lime.lime_tabular import LimeTabularExplainer
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import ExtraTreesClassifier
@@ -91,9 +92,10 @@ def train_decision_tree(X: Union[np.ndarray, pd.DataFrame],
     return tree, scores
 
 
-def get_decision_tree_plot(clf: DecisionTreeClassifier,
-                           feature_names: Union[List[str], np.ndarray, None],
-                           class_names: Union[List[str], None]) \
+def get_decision_tree_plot(
+        clf: DecisionTreeClassifier,
+        feature_names: Union[List[str], None],
+        class_names: Union[List[str], None]) \
         -> np.ndarray:
     """
     Plots the decision tree and returns the image as a Numpy array.
@@ -103,6 +105,10 @@ def get_decision_tree_plot(clf: DecisionTreeClassifier,
     :param class_names: list of names of classes to be plotted or None
     :return: Numpy array with the plot
     """
+    # if/else make sure those are Nones, not empty lists
+    feature_names = feature_names if feature_names else None
+    class_names = class_names if class_names else None
+
     tree: str = export_graphviz(decision_tree=clf,
                                 out_file=None,
                                 feature_names=feature_names,
@@ -124,8 +130,9 @@ def get_decision_tree_plot(clf: DecisionTreeClassifier,
     return image
 
 
-def train_XGBoost(X: Union[np.ndarray, pd.DataFrame],
-                  y: Union[np.ndarray, pd.Series, pd.DataFrame]) \
+def train_XGBoost(
+        X: Union[np.ndarray, pd.DataFrame],
+        y: Union[np.ndarray, pd.Series, pd.DataFrame]) \
         -> Tuple[xgb.XGBClassifier, Dict[str, float]]:
     """
     Train the XGBoost classifier on the given dataset, automatically
@@ -175,3 +182,36 @@ def train_XGBoost(X: Union[np.ndarray, pd.DataFrame],
               "roc_auc": round(roc_auc_score(y_test, y_pred), 2)}
 
     return xgboost, scores
+
+
+def train_LIME_explainer(
+        X: Union[np.ndarray, pd.DataFrame],
+        categorical_features: Tuple[None, List[int]] = None,
+        categorical_names: Tuple[None, Dict[int, Dict[int, str]]] = None,
+        class_names: Tuple[None, List[str]] = None) \
+        -> LimeTabularExplainer:
+    """
+    Train the LIME explainer on the given dataset.
+
+    :param X: matrix-like, samples matrix
+    :param y: vector-like, classes of samples
+    :param categorical_features:
+    :param categorical_names:
+    :param class_names:
+    :return: trained LIME explainer
+    """
+    # if/else's are here to covert empty structures ([], {}) to Nones
+    training_data = X if isinstance(X, np.ndarray) else X.to_numpy()
+    feature_names = X.columns if isinstance(X, pd.DataFrame) else None
+    categorical_features = categorical_features if categorical_features else None
+    categorical_names = categorical_names if categorical_names else None
+    class_names = class_names if class_names else None
+    explainer = LimeTabularExplainer(
+        training_data=training_data,
+        mode="classification",
+        feature_names=feature_names,
+        categorical_features=categorical_features,
+        categorical_names=categorical_names,
+        class_names=class_names
+    )
+    return explainer
