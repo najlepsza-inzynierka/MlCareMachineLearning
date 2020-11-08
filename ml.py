@@ -4,7 +4,6 @@ from typing import Dict, List, Tuple, Union
 
 import cv2
 import graphviz
-from lime.lime_tabular import LimeTabularExplainer
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import ExtraTreesClassifier
@@ -182,36 +181,3 @@ def train_XGBoost(
               "roc_auc": round(roc_auc_score(y_test, y_pred), 2)}
 
     return xgboost, scores
-
-
-def train_LIME_explainer(
-        X: Union[np.ndarray, pd.DataFrame],
-        categorical_features: Tuple[None, List[int]] = None,
-        categorical_names: Tuple[None, Dict[int, Dict[int, str]]] = None,
-        class_names: Tuple[None, List[str]] = None) \
-        -> LimeTabularExplainer:
-    """
-    Train the LIME explainer on the given dataset.
-
-    :param X: matrix-like, samples matrix
-    :param y: vector-like, classes of samples
-    :param categorical_features:
-    :param categorical_names:
-    :param class_names:
-    :return: trained LIME explainer
-    """
-    # if/else's are here to covert empty structures ([], {}) to Nones
-    training_data = X if isinstance(X, np.ndarray) else X.to_numpy()
-    feature_names = X.columns if isinstance(X, pd.DataFrame) else None
-    categorical_features = categorical_features if categorical_features else None
-    categorical_names = categorical_names if categorical_names else None
-    class_names = class_names if class_names else None
-    explainer = LimeTabularExplainer(
-        training_data=training_data,
-        mode="classification",
-        feature_names=feature_names,
-        categorical_features=categorical_features,
-        categorical_names=categorical_names,
-        class_names=class_names
-    )
-    return explainer

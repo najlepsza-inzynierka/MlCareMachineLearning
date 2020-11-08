@@ -2,7 +2,6 @@ import json
 import os
 
 import dill
-import xgboost as xgb
 
 from ml import *
 from data_loaders import load_dataset
@@ -65,23 +64,7 @@ def make_XGBoost_classifiers():
             json.dump(scores, metrics_file, indent=2)
 
 
-def make_LIME_explainers():
-    for dataset in datasets_names:
-        X, _, metadata = load_dataset(dataset)
-
-        explainer = train_LIME_explainer(
-            X,
-            categorical_features=metadata["categorical_features"],
-            categorical_names=metadata["categorical_names"],
-            class_names=metadata["class_names"]
-        )
-
-        with open(os.path.join(dataset, "LIME_explainer.dill"), "wb") as file:
-            dill.dump(explainer, file)
-
-
 if __name__ == "__main__":
     #calculate_feature_importances()
     #make_decision_trees()
-    #make_XGBoost_classifiers()
-    make_LIME_explainers()
+    make_XGBoost_classifiers()
