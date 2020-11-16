@@ -1,8 +1,8 @@
 from io import BytesIO
 
-import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image
 import shap
 import xgboost as xgb
 
@@ -36,8 +36,6 @@ def explain_prediction_with_image(
                 dpi=150,
                 bbox_inches='tight')
     buffer.seek(0)
-    buffer = buffer.read()
+    image = np.array(Image.open(buffer))
 
-    image = cv2.imdecode(np.frombuffer(buffer, np.uint8), -1)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image
