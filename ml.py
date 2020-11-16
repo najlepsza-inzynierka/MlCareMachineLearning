@@ -91,9 +91,10 @@ def train_decision_tree(X: Union[np.ndarray, pd.DataFrame],
     return tree, scores
 
 
-def get_decision_tree_plot(clf: DecisionTreeClassifier,
-                           feature_names: Union[List[str], np.ndarray, None],
-                           class_names: Union[List[str], None]) \
+def get_decision_tree_plot(
+        clf: DecisionTreeClassifier,
+        feature_names: Union[List[str], None],
+        class_names: Union[List[str], None]) \
         -> np.ndarray:
     """
     Plots the decision tree and returns the image as a Numpy array.
@@ -103,6 +104,10 @@ def get_decision_tree_plot(clf: DecisionTreeClassifier,
     :param class_names: list of names of classes to be plotted or None
     :return: Numpy array with the plot
     """
+    # if/else make sure those are Nones, not empty lists
+    feature_names = feature_names if feature_names else None
+    class_names = class_names if class_names else None
+
     tree: str = export_graphviz(decision_tree=clf,
                                 out_file=None,
                                 feature_names=feature_names,
@@ -124,8 +129,9 @@ def get_decision_tree_plot(clf: DecisionTreeClassifier,
     return image
 
 
-def train_XGBoost(X: Union[np.ndarray, pd.DataFrame],
-                  y: Union[np.ndarray, pd.Series, pd.DataFrame]) \
+def train_XGBoost(
+        X: Union[np.ndarray, pd.DataFrame],
+        y: Union[np.ndarray, pd.Series, pd.DataFrame]) \
         -> Tuple[xgb.XGBClassifier, Dict[str, float]]:
     """
     Train the XGBoost classifier on the given dataset, automatically

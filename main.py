@@ -1,7 +1,7 @@
 import json
 import os
 
-import joblib
+import dill
 
 from ml import *
 from data_loaders import load_dataset
@@ -37,16 +37,18 @@ def calculate_feature_importances():
 
 def make_decision_trees():
     for dataset in datasets_names:
-        X, y, class_names = load_dataset(dataset)
-        feature_names: np.ndarray = X.columns.values
+        X, y, metadata = load_dataset(dataset)
         clf, scores = train_decision_tree(X, y)
 
         with open(os.path.join(dataset, "tree_metrics.json"), "w") \
                 as metrics_file:
-            joblib.dump(clf, os.path.join(dataset, "tree_model.joblib"))
+            dill.dump(clf, os.path.join(dataset, "tree_model.joblib"))
             json.dump(scores, metrics_file, indent=2)
 
-        plot = get_decision_tree_plot(clf, feature_names, class_names)
+        plot = get_decision_tree_plot(
+            clf,
+            feature_names=metadata["feature_names"],
+            class_names=metadata["class_names"])
         file_location = os.path.join(dataset, "tree.png")
         cv2.imwrite(file_location, plot)
 
@@ -56,9 +58,9 @@ def make_XGBoost_classifiers():
         X, y, _ = load_dataset(dataset)
         clf, scores = train_XGBoost(X, y)
 
+        clf.save_model(os.path.join(dataset, "xgboost_model.xgb"))
         with open(os.path.join(dataset, "xgboost_metrics.json"), "w") \
                 as metrics_file:
-            joblib.dump(clf, os.path.join(dataset, "xgboost_model.joblib"))
             json.dump(scores, metrics_file, indent=2)
 
 
